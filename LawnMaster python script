@@ -1,0 +1,73 @@
+import cv2
+
+mask_on = False
+img_directory = input('путь к изображению: ')
+
+
+def f(a):
+    global data
+    data = update(cv2.imread(img_directory))
+
+
+# cv2.namedWindow('Settings')
+#
+# cv2.createTrackbar('minB', 'Settings', 0, 255, f)
+# cv2.createTrackbar('minG', 'Settings', 0, 255, f)
+# cv2.createTrackbar('minR', 'Settings', 115, 255, f)
+#
+# cv2.createTrackbar('maxB', 'Settings', 250, 255, f)
+# cv2.createTrackbar('maxG', 'Settings', 115, 255, f)
+# cv2.createTrackbar('maxR', 'Settings', 255, 255, f)
+
+
+def update(frame):
+    blur = 14
+    img = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+    img = cv2.blur(img, (blur, blur), 0)
+
+    mask = cv2.inRange(img,  (0, 0, 114), (250, 118, 255))
+                       # (cv2.getTrackbarPos('minB', 'Settings'),
+                       #  cv2.getTrackbarPos('minG', 'Settings'),
+                       #  cv2.getTrackbarPos('minR', 'Settings')),
+                       # (cv2.getTrackbarPos('maxB', 'Settings'),
+                       #  cv2.getTrackbarPos('maxG', 'Settings'),
+                       #  cv2.getTrackbarPos('maxR', 'Settings')))
+
+    blur1 = 2
+    mask = cv2.blur(mask, (blur1, blur1), 0)
+    higt = len(mask)
+    wight = len(mask[0])
+    a = 0  # кол-во разрешенных пикселей
+    for i in mask:
+        for j in i:
+            if j == 255:
+                a += 1
+    return frame, mask, round(a / (higt * wight) * 100, 1)
+
+
+data = update(cv2.imread(img_directory))
+
+
+print('''
+    для обработки нового изображения нажмите  img
+    для включения маски напишите mask
+    чтобы выйти напишите esc
+    ''')
+
+while cv2.waitKey(1):
+    img = data[0] if not mask_on else cv2.bitwise_and(data[0], data[0], mask=data[1])
+    cv2.putText(img, f"{data[2]}%", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 200, 100), 4)
+    cv2.imshow('img', img)
+    cv2.waitKey(1)
+
+    if cv2.waitKey(1) == 32:
+        command = input('your command: ')
+        if command == 'img':
+            img_directory = input('путь к изображению: ')
+            data = update(cv2.imread(img_directory))
+        elif command == 'esc':
+            break
+        elif command == 'mask':
+            mask_on = True if not mask_on else False
+
+cv2.destroyAllWindows()
